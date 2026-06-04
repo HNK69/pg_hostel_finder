@@ -26,19 +26,35 @@ export default function Login() {
   const passwordValue = watch('password');
   const emailValue = watch('email');
 
-  const onSubmit = async (data) => {
-    setApiLoading(true);
-    try {
-      await login(data.email, data.password);
-      toast.success('Successfully signed in!');
-      navigate(from, { replace: true });
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Sign in failed. Please try again.');
-      console.error(err);
-    } finally {
-      setApiLoading(false);
+const onSubmit = async (data) => {
+  setApiLoading(true);
+
+  try {
+    const user = await login(
+      data.email,
+      data.password
+    );
+
+    toast.success("Successfully signed in!");
+
+    if (user.role === "admin") {
+      navigate("/admin", { replace: true });
+    } else {
+      navigate("/dashboard", { replace: true });
     }
-  };
+
+  } catch (err) {
+    toast.error(
+      err.response?.data?.message ||
+      "Sign in failed. Please try again."
+    );
+
+    console.error(err);
+
+  } finally {
+    setApiLoading(false);
+  }
+};
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },

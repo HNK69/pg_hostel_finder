@@ -1,11 +1,19 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+
 import MainLayout from '../layouts/MainLayout';
 import DashboardLayout from '../layouts/DashboardLayout';
+import AdminLayout from '../layouts/AdminLayout';
+
 import ProtectedRoute from './ProtectedRoute';
 import Spinner from '../components/Spinner';
 
-// Lazy loading pages for optimized performance
+import AdminDashboard from '../pages/AdminDashboard';
+import AdminUsers from '../pages/AdminUsers';
+import AdminHostels from '../pages/AdminHostels';
+import AdminReviews from '../pages/AdminReviews';
+
+// Lazy loading pages
 const Home = lazy(() => import('../pages/Home'));
 const Login = lazy(() => import('../pages/Login'));
 const Register = lazy(() => import('../pages/Register'));
@@ -31,7 +39,8 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={<LazyFallback />}>
       <Routes>
-        {/* Main Website routes */}
+
+        {/* Main Website */}
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
@@ -39,6 +48,7 @@ export default function AppRoutes() {
           <Route path="hostels" element={<HostelList />} />
           <Route path="hostels/:id" element={<HostelDetails />} />
           <Route path="search" element={<Search />} />
+
           <Route
             path="profile"
             element={
@@ -49,11 +59,11 @@ export default function AppRoutes() {
           />
         </Route>
 
-        {/* Dashboard routes (Protected) */}
+        {/* Owner Dashboard */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute allowedRoles={['owner', 'admin']}>
+            <ProtectedRoute allowedRoles={['owner']}>
               <DashboardLayout />
             </ProtectedRoute>
           }
@@ -64,8 +74,24 @@ export default function AppRoutes() {
           <Route path="reviews" element={<DashboardReviews />} />
         </Route>
 
-        {/* Catch-all fallback */}
+        {/* Admin Dashboard */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="hostels" element={<AdminHostels />} />
+          <Route path="reviews" element={<AdminReviews />} />
+        </Route>
+
+        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
     </Suspense>
   );

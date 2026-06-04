@@ -4,6 +4,7 @@ from config import Config
 from flask_cors import CORS
 
 
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
@@ -22,10 +23,12 @@ def create_app(config_class=Config):
     from .routes.image_routes import image_bp
     from .routes.review_routes import review_bp
     from .routes.search_routes import search_bp
+    from .routes.admin_routes import admin_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(hostel_bp, url_prefix="/api/hostels")
     app.register_blueprint(room_bp, url_prefix="/api/rooms")
+    app.register_blueprint(admin_bp, url_prefix="/api/admin")
     app.register_blueprint(image_bp, url_prefix="/api/images")
     app.register_blueprint(review_bp, url_prefix="/api/reviews")
     app.register_blueprint(search_bp, url_prefix="/api/search")
