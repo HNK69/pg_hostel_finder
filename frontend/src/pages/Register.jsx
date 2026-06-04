@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { FiUser, FiMail, FiLock, FiBriefcase, FiEye, FiEyeOff, FiArrowRight } from 'react-icons/fi';
+import { motion } from 'framer-motion';
+import { FiUser, FiMail, FiLock, FiBriefcase, FiEye, FiEyeOff, FiArrowRight, FiCheck } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import Spinner from '../components/Spinner';
+import toast from 'react-hot-toast';
 
 export default function Register() {
   const { register: registerUser } = useAuth();
@@ -14,134 +16,310 @@ export default function Register() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
+    watch,
   } = useForm({
+    mode: 'onChange',
     defaultValues: {
       role: 'owner',
     }
   });
 
+  const passwordValue = watch('password');
+  const nameValue = watch('name');
+  const emailValue = watch('email');
+
   const onSubmit = async (data) => {
     setApiLoading(true);
     try {
       await registerUser(data.name, data.email, data.password, data.role);
+      toast.success('Account created successfully! Redirecting to sign in...');
       navigate('/login');
     } catch (err) {
+      toast.error(err.response?.data?.message || 'Registration failed. Please try again.');
       console.error(err);
     } finally {
       setApiLoading(false);
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, staggerChildren: 0.08 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  const passwordStrength = {
+    weak: passwordValue?.length < 6,
+    medium: passwordValue?.length >= 6 && passwordValue?.length < 10,
+    strong: passwordValue?.length >= 10,
+  };
+
   return (
-    <div className="flex items-center justify-center min-h-[85vh] px-4 py-8">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-100 dark:border-slate-800/80 p-8 rounded-2xl shadow-xl space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold font-display tracking-tight text-slate-900 dark:text-white">
-            Create Owner Account
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Register as a Hostel Owner or Admin to start listing
-          </p>
-        </div>
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-12 overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute top-0 right-0 -z-10 w-96 h-96 bg-gradient-to-br from-primary-400/20 to-blue-400/20 rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/3" />
+      <div className="absolute bottom-0 left-0 -z-10 w-96 h-96 bg-gradient-to-tr from-primary-400/20 to-blue-400/20 rounded-full blur-3xl transform -translate-x-1/3 translate-y-1/3" />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Full Name</label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                <FiUser />
-              </span>
-              <input
-                type="text"
-                placeholder="John Doe"
-                {...register('name', { required: 'Name is required' })}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition duration-200"
-              />
-            </div>
-            {errors.name && <p className="text-xs text-rose-500 mt-1 font-medium">{errors.name.message}</p>}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="w-full max-w-md"
+      >
+        {/* Header */}
+        <motion.div variants={itemVariants} className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-600 to-blue-600 rounded-2xl mb-4 shadow-lg">
+            <FiUser className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white mb-2">
+            Create Account
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400">Register to start listing your properties</p>
+        </motion.div>
+
+        {/* Form Card */}
+        <motion.div
+          variants={itemVariants}
+          className="relative bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/60 rounded-2xl shadow-xl backdrop-blur-xl p-8 space-y-6"
+        >
+          <form onSubmit={handleSubmit(onSubmit)} className="relative z-10 space-y-5">
+            {/* Full Name Field */}
+            <motion.div variants={itemVariants} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Full Name
+                </label>
+                {nameValue && !errors.name && (
+                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center space-x-1">
+                    <FiCheck size={14} />
+                  </span>
+                )}
+              </div>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-primary-500 transition-colors pointer-events-none">
+                  <FiUser size={18} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="John Doe"
+                  {...register('name', {
+                    required: 'Full name is required',
+                    minLength: { value: 2, message: 'Name must be at least 2 characters' },
+                  })}
+                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800/50 text-slate-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 group-hover:border-slate-300 dark:group-hover:border-slate-700"
+                />
+              </div>
+              {errors.name && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xs text-rose-500 font-medium flex items-center space-x-1"
+                >
+                  <span>●</span>
+                  <span>{errors.name.message}</span>
+                </motion.p>
+              )}
+            </motion.div>
+
+            {/* Email Field */}
+            <motion.div variants={itemVariants} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Email Address
+                </label>
+                {emailValue && !errors.email && (
+                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center space-x-1">
+                    <FiCheck size={14} />
+                  </span>
+                )}
+              </div>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-primary-500 transition-colors pointer-events-none">
+                  <FiMail size={18} />
+                </div>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  {...register('email', {
+                    required: 'Email is required',
+                    pattern: { value: /^\S+@\S+$/i, message: 'Please enter a valid email address' },
+                  })}
+                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800/50 text-slate-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 group-hover:border-slate-300 dark:group-hover:border-slate-700"
+                />
+              </div>
+              {errors.email && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xs text-rose-500 font-medium flex items-center space-x-1"
+                >
+                  <span>●</span>
+                  <span>{errors.email.message}</span>
+                </motion.p>
+              )}
+            </motion.div>
+
+            {/* Password Field */}
+            <motion.div variants={itemVariants} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Password
+                </label>
+                {passwordValue && (
+                  <span className={`text-xs font-medium flex items-center space-x-1 ${
+                    passwordStrength.strong ? 'text-emerald-600 dark:text-emerald-400' :
+                    passwordStrength.medium ? 'text-amber-600 dark:text-amber-400' :
+                    'text-rose-600 dark:text-rose-400'
+                  }`}>
+                    <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                    <span>{
+                      passwordStrength.strong ? 'Strong' :
+                      passwordStrength.medium ? 'Medium' : 'Weak'
+                    }</span>
+                  </span>
+                )}
+              </div>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-primary-500 transition-colors pointer-events-none">
+                  <FiLock size={18} />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Min 6 characters"
+                  {...register('password', {
+                    required: 'Password is required',
+                    minLength: { value: 6, message: 'Password must be at least 6 characters' },
+                  })}
+                  className="w-full pl-12 pr-12 py-3.5 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800/50 text-slate-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 group-hover:border-slate-300 dark:group-hover:border-slate-700"
+                />
+                <motion.button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                </motion.button>
+              </div>
+              {passwordValue && (
+                <div className="flex gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className={`h-1 flex-1 rounded-full transition-all ${
+                        i === 0 ? 'bg-rose-500' :
+                        i === 1 && passwordStrength.medium ? 'bg-amber-500' :
+                        i <= 1 && passwordStrength.strong ? 'bg-emerald-500' :
+                        'bg-slate-200 dark:bg-slate-800'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+              {errors.password && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xs text-rose-500 font-medium flex items-center space-x-1"
+                >
+                  <span>●</span>
+                  <span>{errors.password.message}</span>
+                </motion.p>
+              )}
+            </motion.div>
+
+            {/* Role Field */}
+            <motion.div variants={itemVariants} className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Account Type
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-primary-500 transition-colors pointer-events-none">
+                  <FiBriefcase size={18} />
+                </div>
+                <select
+                  {...register('role', { required: 'Account type is required' })}
+                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800/50 text-slate-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 group-hover:border-slate-300 dark:group-hover:border-slate-700 appearance-none"
+                >
+                  <option value="owner">Hostel / PG Owner</option>
+                  <option value="admin">Platform Administrator</option>
+                </select>
+              </div>
+              {errors.role && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xs text-rose-500 font-medium flex items-center space-x-1"
+                >
+                  <span>●</span>
+                  <span>{errors.role.message}</span>
+                </motion.p>
+              )}
+            </motion.div>
+
+            {/* Sign Up Button */}
+            <motion.button
+              variants={itemVariants}
+              type="submit"
+              disabled={apiLoading || !isValid}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 disabled:from-slate-400 disabled:to-slate-400 disabled:cursor-not-allowed text-white font-bold py-3.5 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 mt-8"
+            >
+              {apiLoading ? (
+                <>
+                  <Spinner size="sm" color="white" />
+                  <span>Creating account...</span>
+                </>
+              ) : (
+                <>
+                  <span>Create Account</span>
+                  <FiArrowRight size={18} />
+                </>
+              )}
+            </motion.button>
+          </form>
+
+          {/* Divider */}
+          <div className="relative flex items-center space-x-4">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-700" />
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Already registered?</span>
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent dark:via-slate-700" />
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Email Address</label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                <FiMail />
-              </span>
-              <input
-                type="email"
-                placeholder="you@example.com"
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: { value: /^\S+@\S+$/i, message: 'Invalid email address' },
-                })}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition duration-200"
-              />
-            </div>
-            {errors.email && <p className="text-xs text-rose-500 mt-1 font-medium">{errors.email.message}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Password</label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                <FiLock />
-              </span>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Min 6 characters"
-                {...register('password', {
-                  required: 'Password is required',
-                  minLength: { value: 6, message: 'Password must be at least 6 characters' },
-                })}
-                className="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition duration-200"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400"
-                aria-label="Toggle Password Visibility"
+          {/* Sign In Link */}
+          <motion.div variants={itemVariants} className="text-center">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors underline decoration-2 decoration-primary-200 dark:decoration-primary-900 underline-offset-2"
               >
-                {showPassword ? <FiEyeOff /> : <FiEye />}
-              </button>
-            </div>
-            {errors.password && <p className="text-xs text-rose-500 mt-1 font-medium">{errors.password.message}</p>}
-          </div>
+                Sign in here
+              </Link>
+            </p>
+          </motion.div>
+        </motion.div>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Account Role</label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                <FiBriefcase />
-              </span>
-              <select
-                {...register('role', { required: 'Role is required' })}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition duration-200 appearance-none"
-              >
-                <option value="owner">Hostel Owner</option>
-                <option value="admin">Platform Administrator</option>
-              </select>
-            </div>
-            {errors.role && <p className="text-xs text-rose-500 mt-1 font-medium">{errors.role.message}</p>}
-          </div>
-
-          <button
-            type="submit"
-            disabled={apiLoading}
-            className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition duration-200 mt-6"
-          >
-            {apiLoading ? <Spinner size="sm" color="white" /> : <span>Sign Up</span>}
-            {!apiLoading && <FiArrowRight />}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-slate-500 dark:text-slate-400 pt-4 border-t border-slate-100 dark:border-slate-800/80">
-          Already have an account?{' '}
-          <Link to="/login" className="font-semibold text-primary-600 hover:underline">
-            Sign in
-          </Link>
-        </p>
-      </div>
+        {/* Footer Note */}
+        <motion.p
+          variants={itemVariants}
+          className="text-center text-xs text-slate-500 dark:text-slate-400 mt-6"
+        >
+          Register to list your properties and manage bookings
+        </motion.p>
+      </motion.div>
     </div>
   );
 }
